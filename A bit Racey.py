@@ -2,13 +2,28 @@ try:
     import random
     import time
     import pygame
+    import os; print(os.getcwd())
 except ImportError as err:
     print("couldn't load module. %s" % (err))
     sys.exit(2)
- 
+os.chdir("D:\\Data\\School\\SDD\\Assessment\\Pygame practice\\A bit Racey")
+print(os.getcwd())
 pygame.init()
 pygame.joystick.init()
- 
+
+print("Current working dir : %s" % os.getcwd())
+
+try:
+    fp = open('carAsset.png')
+except PermissionError as err:
+    print("Permessions denied. %s" %(err))
+
+folder = os.path.dirname(os.path.realpath(__file__))
+carAsset = pygame.image.load(os.path.join(folder, "carAsset.png"))
+bulletAsset = pygame.image.load(os.path.join(folder, "bulletasset.png"))
+
+
+
 display_width = 1366
 display_height = 762
 
@@ -41,13 +56,11 @@ car_width = 50
 gameDisplay = pygame.display.set_mode((display_width,display_height))
 pygame.display.set_caption('A bit Racey')
 clock = pygame.time.Clock()
- 
-carImg = pygame.image.load('carasset.png')
-
 
 joystick = pygame.joystick.Joystick(0)
 joystick.init()
-axes = joystick.get_numaxes()
+axis = joystick.get_numaxes()
+
 
 leftchange = -5
 rightchange = 5
@@ -56,18 +69,11 @@ gamepad = True
 
 joybuttons = joystick.get_numbuttons()
 
-
-
-all_sprites_list = pygame.sprite.Group()
-
-timesinceshot = 0
-
-
-
 class Bullet(pygame.sprite.Sprite):
     def __init__(self):
+        super().__init__()
         
-        self.image =  pygame.image.load('D:\Data\School\SDD\Assessment\Pygame practice\A bit Racey\bulletasset.png')
+        self.image =  pygame.image.load('bulletasset.png').convert_alpha()
         self.rect = self.image.get_rect()
  
     def update(self):
@@ -76,21 +82,50 @@ class Bullet(pygame.sprite.Sprite):
 
 class Car(pygame.sprite.Sprite):
     def __init__(self):
-        self.image, self.rect = pygame.image.load('carasset.png')
-        screen = pygame.display.get_surface()
-        self.area = screen.get_rect()
+        super().__init__()
+        
+        self.image = pygame.image.load('carAsset.png').convert_alpha()
+ 
+        # Fetch the rectangle object that has the dimensions of the image.
+        self.rect = self.image.get_rect()
+ 
+    def moveRight(self, pixels):
+        self.rect.x += pixels
+ 
+    def moveLeft(self, pixels):
+        self.rect.x -= pixels
+
+class Thing(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+
+        self.image = pygame.Surface([100, 100])
+        self.image.fill(blue)
+
+        self.rect = self.image.get_rect()
 
     def update(self):
-        for event in pygame.event.get():
-            axis = joystick.get_axis(0)
-            if axis <= -0.01:
-                x_change = leftchange
-            elif axis >= 0.01:
-                x_change = rightchange
-            else:
-                x_change = 0
+        self.rect.y -= thing_speed
 
- 
+
+all_sprites_list = pygame.sprite.Group()
+
+bullet_list = pygame.sprite.Group()
+
+timesinceshot = 0
+
+thing_speed = 4
+        
+def method_name():
+    car = Car()
+    return car
+
+car = method_name()
+car_rect_x = display_width
+car_rect_y = display_height
+x = car_rect_x
+y = car_rect_y
+
 def things_dodged(count):
     font = pygame.font.SysFont(None, 25)
     text = font.render("Dodged: "+str(count), True, black)
@@ -154,9 +189,6 @@ def crash():
         pygame.display.update()
         clock.tick(20)
 
-def car(x,y):
-    gameDisplay.blit(carImg,(x,y))
-
 def game_intro():
 
     intro = True
@@ -167,10 +199,15 @@ def game_intro():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_f:
-                    pygame.display.toggle_fullscreen()
-                
+            
+            axis = joystick.get_axis(0)
+            if axis <= -0.01:
+                x_change = leftchange
+            elif axis >= 0.01:
+                x_change = rightchange
+            else:
+                x_change = 0
+         
         gameDisplay.fill(white)
         largeText = pygame.font.Font('freesansbold.ttf',115)
         TextSurf, TextRect = text_objects("A bit Racey", largeText)
@@ -192,10 +229,10 @@ def game_intro():
 
     
 def game_loop():
-    x = (display_width * 0.45)
-    y = (display_height * 0.8)
+
  
     x_change = 0
+    x = car_rect_x
  
     thing_startx = random.randrange(0, display_width)
     thing_starty = -600
@@ -205,8 +242,7 @@ def game_loop():
  
     thingCount = 1
 
-    leftchange = -5
-    rightchange = 5
+
  
     dodged = 0
  
@@ -219,13 +255,13 @@ def game_loop():
                 pygame.quit()
                 quit()
             #print(event)
-            axis = joystick.get_axis(0)
-            if axis <= -0.01:
-                x_change = leftchange
-            elif axis >= 0.01:
-                x_change = rightchange
-            else:
-                x_change = 0
+            for event in pygame.event.get():
+                if axis <= -0.01:
+                    Car.moveLeft(Car, 5)
+                elif axis >= 0.01:
+                    Car.moveRight(Car, 5)
+
+
 
                 for i in range( joybuttons ):
                     button = joystick.get_button( i )
@@ -235,7 +271,7 @@ def game_loop():
                # Fire a bullet if the user clicks the mouse button
                bullet = Bullet()
                # Set the bullet so it is where the player is
-               bullet.rect.x = x+23
+               bullet.rect.x = x+15
                bullet.rect.y = y
                # Add the bullet to the lists
                all_sprites_list.add(bullet)
@@ -263,7 +299,6 @@ def game_loop():
  
         
         thing_starty += thing_speed
-        car(x,y)
         things_dodged(dodged)
  
         if x > display_width - car_width or x < 0:
@@ -275,8 +310,7 @@ def game_loop():
             dodged += 1
             thing_speed += 1
             thing_width += (dodged * 10)
-            leftchange += -.5
-            rightchange += .5
+
  
         if y < thing_starty+thing_height:          
  
@@ -285,7 +319,12 @@ def game_loop():
         
         pygame.display.update()
         clock.tick(60)
+
+
 bullet_list = pygame.sprite.Group()
+player = Car()
+all_sprites_list.add(player)
+
 
 game_intro()
 game_loop()
